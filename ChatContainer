@@ -1,0 +1,25 @@
+"use client";
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { MessageSquare } from 'lucide-react';
+import ChatMessages from './ChatMessages';
+import ChatInput from './ChatInput';
+
+export default function ChatContainer() {
+  return (
+    <Card className="h-[calc(100vh-12rem)] flex flex-col">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <MessageSquare className="h-6 w-6" />
+          AI Mentor Chat
+        </CardTitle>
+        <CardDescription>Ask me anything about your career path, skills, or goals.</CardDescription>
+      </CardHeader>
+      <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden p-4 pt-0">
+        <ChatMessages />
+        <ChatInput />
+      </CardContent>
+    </Card>
+  );
+}

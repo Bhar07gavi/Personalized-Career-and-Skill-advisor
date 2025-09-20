@@ -1,0 +1,131 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { User } from '@/entities/User';
+import { Skill } from '@/entities/Skill';
+import { Goal } from '@/entities/Goal';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Lightbulb, Target, Sparkles, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
+import { createPageUrl } from '@/utils';
+
+export default function Dashboard() {
+  const [user, setUser] = useState<any>(null);
+  const [skills, setSkills] = useState<any[]>([]);
+  const [goals, setGoals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [userData, skillsData, goalsData] = await Promise.all([
+          User.me(),
+          Skill.list("createdAt:desc"),
+          Goal.list("createdAt:desc")
+        ]);
+        setUser(userData);
+        setSkills(skillsData);
+        setGoals(goalsData);
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const getGoalProgress = (goal: any) => {
+    if (!goal.requiredSkills || goal.requiredSkills.length === 0) return 0;
+    const acquiredSkills = skills.filter(s => goal.requiredSkills.includes(s.id));
+    return (acquiredSkills.length / goal.requiredSkills.length) * 100;
+  };
+
+  if (loading) {
+    return <div>Loading dashboard...</div>;
+  }
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold">Welcome back, {user?.firstName || 'User'}!</h1>
+        <p className="text-muted-foreground">Here's your career development overview.</p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-primary" />
+              AI Recommendations
+            </CardTitle>
+            <CardDescription>Next steps suggested by your AI mentor.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="font-semibold text-sm">Learn "State Management in React"</p>
+              <p className="text-xs text-muted-foreground">Based on your goal to become a Senior Frontend Developer.</p>
+            </div>
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="font-semibold text-sm">Explore "Advanced CSS Techniques"</p>
+              <p className="text-xs text-muted-foreground">To improve your UI/UX skills.</p>
+            </div>
+            <Button size="sm" variant="outline" className="w-full">Get more recommendations</Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" />
+              Active Goals
+            </CardTitle>
+            <CardDescription>Your progress towards your career ambitions.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {goals.slice(0, 2).map(goal => (
+              <div key={goal.id}>
+                <div className="flex justify-between items-center mb-1">
+                  <p className="font-semibold text-sm">{goal.title}</p>
+                  <p className="text-xs font-mono">{getGoalProgress(goal).toFixed(0)}%</p>
+                </div>
+                <Progress value={getGoalProgress(goal)} />
+              </div>
+            ))}
+             <Button asChild size="sm" className="w-full">
+              <Link href={createPageUrl('Goals')} className="flex items-center gap-2">
+                View All Goals <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Top Skills
+            </CardTitle>
+            <CardDescription>Your most proficient skills.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {skills.slice(0, 3).map(skill => (
+              <div key={skill.id} className="flex justify-between items-center p-2 bg-muted rounded-md">
+                <p className="font-medium text-sm">{skill.name}</p>
+                <p className="text-xs text-muted-foreground">{skill.proficiency}</p>
+              </div>
+            ))}
+            <Button asChild size="sm" className="w-full">
+              <Link href={createPageUrl('Skills')} className="flex items-center gap-2">
+                Manage Skills <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

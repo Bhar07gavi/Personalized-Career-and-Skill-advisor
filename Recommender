@@ -1,0 +1,162 @@
+"use client";
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { InvokeLLM } from '@/integrations/Core';
+import { Wand2, Loader2 } from 'lucide-react';
+import RecommendationCard from '../components/recommender/RecommendationCard';
+
+interface FormData {
+  academic_background: string;
+  interests: string;
+  current_skills: string;
+  career_preferences: string;
+}
+
+interface CareerRecommendation {
+  career: string;
+  description: string;
+  missing_skills: string[];
+  courses: string[];
+}
+
+export default function RecommenderPage() {
+  const [formData, setFormData] = useState<FormData>({
+    academic_background: '',
+    interests: '',
+    current_skills: '',
+    career_preferences: '',
+  });
+  const [recommendations, setRecommendations] = useState<CareerRecommendation[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setRecommendations([]);
+
+    const prompt = `
+      Suggest 3 suitable career paths for a student with this profile:
+      - Academic Background: ${formData.academic_background}
+      - Interests: ${formData.interests}
+      - Current Skills: ${formData.current_skills}
+      - Career Preferences: ${formData.career_preferences}
+
+      For each career, provide a short description, a list of missing skills the user should learn, and at least 2 online course recommendations (with platform name).
+    `;
+
+    const responseSchema = {
+      type: "object",
+      properties: {
+        career_recommendations: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              career: { type: "string" },
+              description: { type: "string" },
+              missing_skills: { type: "array", items: { type: "string" } },
+              courses: { type: "array", items: { type: "string" } }
+            },
+            required: ["career", "description", "missing_skills", "courses"]
+          }
+        }
+      },
+      required: ["career_recommendations"]
+    };
+
+    try {
+      const response = await InvokeLLM({
+        prompt,
+        response_json_schema: responseSchema,
+      });
+      
+      if (response && response.career_recommendations) {
+        setRecommendations(response.career_recommendations);
+      } else {
+        throw new Error("Invalid response structure from AI.");
+      }
+
+    } catch (error) {
+      console.error("Failed to get career recommendations:", error);
+      toast({
+        title: "Error",
+        description: "Could not generate recommendations. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8 max-w-4xl mx-auto">
+      <div>
+        <h1 className="text-3xl font-bold">AI Career Recommender</h1>
+        <p className="text-muted-foreground">Fill out your profile to get personalized career path suggestions from our AI mentor.</p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Profile</CardTitle>
+          <CardDescription>The more details you provide, the better the recommendations will be.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="academic_background">Academic Background</Label>
+                <Input id="academic_background" placeholder="e.g., B.Tech in Computer Science" value={formData.academic_background} onChange={handleInputChange} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="interests">Interests</Label>
+                <Input id="interests" placeholder="e.g., AI, web development, gaming" value={formData.interests} onChange={handleInputChange} required />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="current_skills">Current Skills</Label>
+              <Textarea id="current_skills" placeholder="e.g., Python, React, Git, basic UI design" value={formData.current_skills} onChange={handleInputChange} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="career_preferences">Career Preferences</Label>
+              <Textarea id="career_preferences" placeholder="e.g., I prefer remote work, enjoy collaborative projects, and want a role with growth potential." value={formData.career_preferences} onChange={handleInputChange} required />
+            </div>
+            <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="mr-2 h-4 w-4" />
+                  Get Recommendations
+                </>
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {recommendations.length > 0 && (
+        <div className="space-y-6">
+           <h2 className="text-2xl font-bold text-center">Your Recommended Career Paths</h2>
+           {recommendations.map((rec, index) => (
+             <RecommendationCard key={index} recommendation={rec} />
+           ))}
+        </div>
+      )}
+    </div>
+  );
+}

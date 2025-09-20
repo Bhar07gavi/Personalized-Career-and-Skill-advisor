@@ -1,0 +1,45 @@
+"use client";
+
+import React, { useState } from 'react';
+import { useCopilotChatHeadless } from '@copilotkit/react-core';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { ArrowUp } from 'lucide-react';
+
+export default function ChatInput() {
+  const { sendMessage, isLoading } = useCopilotChatHeadless();
+  const [inputValue, setInputValue] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputValue.trim() && !isLoading) {
+      sendMessage({ role: 'user', content: inputValue, id: new Date().toISOString() });
+      setInputValue('');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="relative">
+      <Textarea
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        placeholder="Ask a follow-up question..."
+        className="pr-12"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit(e);
+          }
+        }}
+      />
+      <Button
+        type="submit"
+        size="icon"
+        className="absolute right-2.5 bottom-2.5 h-8 w-8"
+        disabled={isLoading || !inputValue.trim()}
+      >
+        <ArrowUp className="h-4 w-4" />
+      </Button>
+    </form>
+  );
+}

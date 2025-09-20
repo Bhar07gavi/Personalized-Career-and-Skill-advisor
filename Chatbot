@@ -1,0 +1,63 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { CopilotKit } from '@copilotkit/react-core';
+import ChatContainer from '../components/chatbot/ChatContainer';
+import useChatActions from '../components/chatbot/useChatActions';
+import { Skill } from '@/entities/Skill';
+import { Goal } from '@/entities/Goal';
+import { User } from '@/entities/User';
+import { Skeleton } from '@/components/ui/skeleton';
+
+export default function ChatbotPage() {
+  const [skills, setSkills] = useState<any[]>([]);
+  const [goals, setGoals] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [skillsData, goalsData, userData] = await Promise.all([
+          Skill.list(),
+          Goal.list(),
+          User.me()
+        ]);
+        setSkills(skillsData);
+        setGoals(goalsData);
+        setUser(userData);
+      } catch (error) {
+        console.error("Failed to fetch data for chatbot:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  return (
+    <CopilotKit>
+      <ChatbotWrapper skills={skills} goals={goals} user={user} loading={loading} />
+    </CopilotKit>
+  );
+}
+
+// Wrapper component to use the hook conditionally
+function ChatbotWrapper({ skills, goals, user, loading }: { skills: any[], goals: any[], user: any, loading: boolean }) {
+  useChatActions({ skills, goals, user });
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-12 w-1/2" />
+        <Skeleton className="h-8 w-3/4" />
+        <div className="h-[calc(100vh-18rem)] flex flex-col space-y-4">
+          <Skeleton className="h-full w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  return <ChatContainer />;
+}

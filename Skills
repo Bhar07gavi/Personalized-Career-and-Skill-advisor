@@ -1,0 +1,99 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { Skill } from '@/entities/Skill';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Sparkles } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import SkillForm from '../components/skills/SkillForm';
+import SkillList from '../components/skills/SkillList';
+
+export default function SkillsPage() {
+  const [skills, setSkills] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingSkill, setEditingSkill] = useState<any | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadSkills();
+  }, []);
+
+  const loadSkills = async () => {
+    setLoading(true);
+    try {
+      const skillsData = await Skill.list("createdAt:desc");
+      setSkills(skillsData);
+    } catch (error) {
+      console.error("Failed to load skills:", error);
+      toast({ title: "Error", description: "Could not load skills.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFormSuccess = (skill: any) => {
+    if (editingSkill) {
+      setSkills(skills.map(s => s.id === skill.id ? skill : s));
+    } else {
+      setSkills([skill, ...skills]);
+    }
+    setIsFormOpen(false);
+    setEditingSkill(null);
+  };
+
+  const handleEdit = (skill: any) => {
+    setEditingSkill(skill);
+    setIsFormOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await Skill.delete(id);
+      setSkills(skills.filter(s => s.id !== id));
+      toast({ title: "Success", description: "Skill deleted." });
+    } catch (error) {
+      console.error("Failed to delete skill:", error);
+      toast({ title: "Error", description: "Could not delete skill.", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">My Skills</h1>
+          <p className="text-muted-foreground">Manage your professional skills and track your proficiency.</p>
+        </div>
+        <Button onClick={() => { setEditingSkill(null); setIsFormOpen(true); }}>
+          <Plus className="mr-2 h-4 w-4" /> Add Skill
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            Your Skill Set
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SkillList
+            skills={skills}
+            loading={loading}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        </CardContent>
+      </Card>
+
+      <SkillForm
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onSuccess={handleFormSuccess}
+        editingSkill={editingSkill}
+      />
+    </div>
+  );
+}

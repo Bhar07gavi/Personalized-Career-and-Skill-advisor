@@ -1,0 +1,62 @@
+"use client";
+
+import React, { useRef, useEffect } from 'react';
+import { useCopilotChatHeadless } from '@copilotkit/react-core';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Bot, User } from 'lucide-react';
+
+export default function ChatMessages() {
+  const { messages, isLoading } = useCopilotChatHeadless();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
+
+  return (
+    <ScrollArea className="flex-1 h-full">
+      <div className="space-y-6 p-4">
+        {messages.map((msg) => (
+          <div key={msg.id} className={`flex items-start gap-4 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+            {msg.role === 'assistant' && (
+              <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0">
+                <Bot className="h-5 w-5" />
+              </div>
+            )}
+            <div className={`max-w-lg p-4 rounded-2xl break-words ${
+              msg.role === 'user'
+                ? 'bg-primary text-primary-foreground rounded-br-none'
+                : 'bg-muted rounded-bl-none'
+            }`}>
+              <ReactMarkdown className="prose prose-sm max-w-none prose-p:my-0" remarkPlugins={[remarkGfm]}>
+                {msg.content}
+              </ReactMarkdown>
+            </div>
+             {msg.role === 'user' && (
+              <div className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center flex-shrink-0">
+                <User className="h-5 w-5" />
+              </div>
+            )}
+          </div>
+        ))}
+        {isLoading && (
+          <div className="flex items-start gap-4">
+            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0">
+              <Bot className="h-5 w-5" />
+            </div>
+            <div className="max-w-lg p-4 rounded-2xl bg-muted rounded-bl-none">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce"></span>
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+    </ScrollArea>
+  );
+}

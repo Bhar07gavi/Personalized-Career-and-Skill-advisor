@@ -1,0 +1,107 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { Goal } from '@/entities/Goal';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Target } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import GoalForm from '../components/goals/GoalForm';
+import GoalList from '../components/goals/GoalList';
+import { Skill } from '@/entities/Skill';
+
+export default function GoalsPage() {
+  const [goals, setGoals] = useState<any[]>([]);
+  const [skills, setSkills] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<any | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [goalsData, skillsData] = await Promise.all([
+        Goal.list("createdAt:desc"),
+        Skill.list()
+      ]);
+      setGoals(goalsData);
+      setSkills(skillsData);
+    } catch (error) {
+      console.error("Failed to load data:", error);
+      toast({ title: "Error", description: "Could not load goals and skills.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFormSuccess = (goal: any) => {
+    if (editingGoal) {
+      setGoals(goals.map(g => g.id === goal.id ? goal : g));
+    } else {
+      setGoals([goal, ...goals]);
+    }
+    setIsFormOpen(false);
+    setEditingGoal(null);
+  };
+
+  const handleEdit = (goal: any) => {
+    setEditingGoal(goal);
+    setIsFormOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await Goal.delete(id);
+      setGoals(goals.filter(g => g.id !== id));
+      toast({ title: "Success", description: "Goal deleted." });
+    } catch (error) {
+      console.error("Failed to delete goal:", error);
+      toast({ title: "Error", description: "Could not delete goal.", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">My Goals</h1>
+          <p className="text-muted-foreground">Define and track your career aspirations.</p>
+        </div>
+        <Button onClick={() => { setEditingGoal(null); setIsFormOpen(true); }}>
+          <Plus className="mr-2 h-4 w-4" /> Add Goal
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Your Career Goals
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <GoalList
+            goals={goals}
+            skills={skills}
+            loading={loading}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        </CardContent>
+      </Card>
+
+      <GoalForm
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onSuccess={handleFormSuccess}
+        editingGoal={editingGoal}
+        availableSkills={skills}
+      />
+    </div>
+  );
+}

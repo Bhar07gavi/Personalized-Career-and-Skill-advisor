@@ -1,0 +1,24 @@
+"use client";
+
+import { useCopilotReadable } from "@copilotkit/react-core";
+
+interface ChatActionsProps {
+  skills: any[];
+  goals: any[];
+  user: any;
+}
+
+export default function useChatActions({ skills, goals, user }: ChatActionsProps) {
+  useCopilotReadable({
+    description: "The user's current profile information, including their skills, career goals, and personal details. Use this context to provide personalized career advice.",
+    value: {
+      user: {
+        firstName: user?.firstName,
+        currentRole: user?.currentRole,
+        interests: user?.interests,
+      },
+      skills: skills.map(s => ({ name: s.name, proficiency: s.proficiency, category: s.category })),
+      goals: goals.map(g => ({ title: g.title, description: g.description, targetDate: g.targetDate, status: g.status })),
+    },
+  });
+}
