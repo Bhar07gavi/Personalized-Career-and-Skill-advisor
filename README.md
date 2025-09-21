@@ -86,23 +86,10 @@ State Management: React Hooks
 
 This project is licensed under the MIT License.
 
-👉 Would you like me to also create a CONTRIBUTING.md (for future contributors) and a project description for GitHub repo (short tagline + topics), so it looks more professional?
 
 You said:
 https://skill-set-mentor-932b5.buildaispace.app
-ChatGPT said:
 
-Cool, I checked out SkillSet Mentor hosted on BuildAI.space. 🎯
-
-If you like, I can give you feedback on UX, design, or content, or help you integrate this link into your README. What’d you prefer?
-
-You said:
-readme
-ChatGPT said:
-
-Got it 🚀 Let’s update your README.md so it includes your deployed project link along with everything else.
-
-Here’s the final version for Personalized-Career-and-Skill-advisor:
 
 Personalized Career and Skill Advisor
 
