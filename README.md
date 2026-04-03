@@ -87,12 +87,6 @@ State Management: React Hooks
 This project is licensed under the MIT License.
 
 
-You said:
-https://skill-set-mentor-932b5.buildaispace.app
-
-
-Personalized Career and Skill Advisor
-
 🔗 Live Demo: SkillSet Mentor
 
 📌 Overview
